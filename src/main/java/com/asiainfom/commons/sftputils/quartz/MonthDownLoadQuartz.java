@@ -34,46 +34,60 @@ public class MonthDownLoadQuartz {
     @Value("${sftp.rootDirectory}")
     private String rootDirectory;
 
-    String fileA = "hubydcmcc_app_jihuo_";
 
-    String fileB = "hubydcmcc_app_hechou_";
+    @Value("${sftp.month.fileNames}")
+    private String fileNames;
 
-    String subfix = ".csv";
+
+    @Value("${sftp.month.ftpPath}")
+    private String ftpPath;
+
+    @Value("${sftp.month.fileSubfix}")
+    private String fileSubfix;
+
 
     @Scheduled(cron = "${quartz.month.cron}")
     public void timerToNow() {
         log.info("月文件下载-->当前时间: 【" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()) + " 】sftp月文件下载开始");
         try {
 
-            String ftpPath;
+            if (ftpPath == null) {
+                throw new RuntimeException("请配置application.properties中的sftp.month.ftpPath属性");
+            }
+
+            if (fileNames == null) {
+                throw new RuntimeException("请配置application.properties中的sftp.month.fileNames属性");
+            }
+
+            String[] paths = ftpPath.split(",");
+
+            String[] names = fileNames.split(",");
+
+            String sftpPath;
+
+            File downLoadFile;
+
             String filePath = localDirectory + File.separator + "month";
             File file = new File(filePath);
             if (!file.exists()) {
                 file.mkdirs();
                 log.info("月文件下载-->创建新目录: {}", file.getAbsolutePath());
             }
-            log.info("月文件下载-->文件存储路径: " + file.getAbsolutePath());
-            String fileName1 = fileA + DateUtils.getBeforeMonthText() + subfix;
-            File downLoadFile1 = new File(filePath + File.separator + fileName1);
-            if (!downLoadFile1.exists()) {
-                sftpUtil.login();
-                ftpPath = rootDirectory + File.separator + "jihuo";
-                sftpUtil.download(ftpPath, fileName1, downLoadFile1.getAbsolutePath());
-                log.info("月文件下载-->从ftp:{}下载文件到-->{}", sftpUtil.getHost(), downLoadFile1.getAbsolutePath());
-                sftpUtil.logout();
-            } else {
-                log.info("月文件下载-->文件{}已存在，不下载", downLoadFile1.getAbsolutePath());
-            }
-            String fileName2 = fileB + DateUtils.getBeforeMonthText() + subfix;
-            File downLoadFile2 = new File(filePath + File.separator + fileName2);
-            if (!downLoadFile2.exists()) {
-                ftpPath = rootDirectory + File.separator + "hechou";
+            sftpUtil.login();
+            for (String path : paths) {
+                for (String name : names) {
+                    name = name + DateUtils.getBeforeMonthText() + fileSubfix;
+                    downLoadFile = new File(filePath + File.separator + name);
+                    if (!downLoadFile.exists()) {
 
-                sftpUtil.login();
-                sftpUtil.download(ftpPath, fileName2, downLoadFile2.getAbsolutePath());
-                log.info("月文件下载-->从ftp:{}下载文件到-->{}", sftpUtil.getHost(), downLoadFile2.getAbsolutePath());
-            } else {
-                log.info("月文件下载-->文件{}已存在，不下载", downLoadFile2.getAbsolutePath());
+                        sftpPath = rootDirectory + File.separator + path;
+                        sftpUtil.download(sftpPath, name, downLoadFile.getAbsolutePath());
+                        log.info("月文件下载-->从ftp:{}下载文件到-->{}", sftpUtil.getHost(), downLoadFile.getAbsolutePath());
+                        sftpUtil.logout();
+                    } else {
+                        log.info("月文件下载-->文件{}已存在，不下载", downLoadFile.getAbsolutePath());
+                    }
+                }
             }
         } catch (Exception e) {
             log.error("月文件下载-->sftp月文件下载失败:\n" + e.getMessage(), e);
