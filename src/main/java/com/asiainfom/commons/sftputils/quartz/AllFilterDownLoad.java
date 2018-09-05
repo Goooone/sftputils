@@ -35,14 +35,14 @@ public class AllFilterDownLoad {
     @Value("${sftp.rootDirectory}")
     private String rootDirectory;
 
-    String fileA = "hubydcmcc_app_detail_";
-
-    String fileB = "hubydcmcc_phone_detail_";
-
-    String subfix = ".AVL";
-
     @Value("${sftp.allDownload}")
     private boolean flag;
+
+    @Value("${sftp.day.fileSubfix}")
+    String daySubfix;
+
+    @Value("${sftp.month.fileSubfix}")
+    String monthSubfix;
 
     @Scheduled(cron = "${quartz.cron}")
     public void timerToNow() {
@@ -51,12 +51,22 @@ public class AllFilterDownLoad {
             try {
                 log.info("全量下载开始");
                 log.info("请设置application.properties 文件中的sftp.allDownload=false关闭全量下载");
+                sftpUtil.login();
+                File dayFile = new File(localDirectory + File.separator + "day");
+                if (!dayFile.exists()) {
+                    dayFile.mkdirs();
+                }
+                File monthFile = new File(localDirectory + File.separator + "month");
+                if (!monthFile.exists()) {
+                    monthFile.mkdirs();
+                }
                 downLoad(rootDirectory);
                 log.info("全量下载结束");
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e.getMessage(), e);
             } finally {
                 flag = false;
+                sftpUtil.logout();
             }
         } else {
             log.info("未开启全量下载-->");
@@ -65,9 +75,7 @@ public class AllFilterDownLoad {
 
     private void downLoad(String directory) {
         try {
-            sftpUtil.login();
             Vector<ChannelSftp.LsEntry> vector = sftpUtil.listFiles(directory);
-            sftpUtil.logout();
             if (!vector.isEmpty() && vector.size() > 0) {
                 Iterator<ChannelSftp.LsEntry> it = vector.iterator();
                 while (it.hasNext()) {
@@ -81,59 +89,35 @@ public class AllFilterDownLoad {
 
                     } else {
                         log.info("{} 是一个文件", entry.getLongname());
-                        sftpUtil.login();
-                        File dayFile = new File(localDirectory + File.separator + "day");
-                        if (!dayFile.exists()) {
-                            dayFile.mkdirs();
+                        if (entry.getFilename().lastIndexOf(daySubfix) == -1 && entry.getFilename().lastIndexOf(monthSubfix) == -1) {
+                            log.info("文件名: {}不是日文件和月文件", entry.getLongname());
+                            continue;
                         }
-                        File monthFile = new File(localDirectory + File.separator + "month");
-                        if (!monthFile.exists()) {
-                            monthFile.mkdirs();
-                        }
-                        if (entry.getFilename().indexOf("hechou") > 0) {
+                        if (entry.getFilename().indexOf("hechou") > 0 || entry.getFilename().indexOf("jihuo") > 0) {
                             File file = new File(localDirectory + File.separator + "month" + File.separator + entry.getFilename());
                             if (!file.exists()) {
-                                sftpUtil.download(directory, entry.getFilename(),
-                                        localDirectory + File.separator + "month" + File.separator + entry.getFilename());
+                                sftpUtil.download(directory, entry.getFilename(), file.getAbsolutePath());
+                                log.info("月文件下载,文件名:{}", file.getAbsolutePath());
                             } else {
                                 log.info("文件{}已经存在，不下载", file.getAbsolutePath());
                             }
 
-                        } else if (entry.getFilename().indexOf("jihuo") > 0) {
-                            File file = new File(localDirectory + File.separator + "month" + File.separator + entry.getFilename());
+                        } else {
+                            File file = new File(localDirectory + File.separator + "day" + File.separator + entry.getFilename());
                             if (!file.exists()) {
                                 sftpUtil.download(directory, entry.getFilename(),
                                         file.getAbsolutePath());
+                                log.info("日文件下载,文件名:{}", file.getAbsolutePath());
                             } else {
-                                log.info("文件{}已经存在，不下载", file.getAbsolutePath());
-                            }
-                            sftpUtil.download(rootDirectory + File.separator + "jihuo", entry.getFilename(),
-                                    localDirectory + File.separator + "month" + File.separator + entry.getFilename());
-                        } else {
-                            log.info(directory);
-                            File file = new File(localDirectory + File.separator + "day" + File.separator + entry.getFilename());
-                            if (!file.exists()) {
-                                if (entry.getFilename().lastIndexOf(".xlsx") < 0) {
-                                    log.info("不下载后缀为.xlsx的文件" + file.getAbsolutePath());
-                                } else {
-                                    sftpUtil.download(directory, entry.getFilename(),
-                                            file.getAbsolutePath());
-                                }
-                            } else {
-
                                 log.info("文件{}已经存在，不下载", file.getAbsolutePath());
                             }
 
                         }
                     }
                 }
-            } else {
-                return;
             }
         } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            sftpUtil.logout();
+            log.error(e.getMessage(), e);
         }
 
     }

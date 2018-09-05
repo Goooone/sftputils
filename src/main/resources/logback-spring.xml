@@ -158,22 +158,20 @@
     </logger>
 
     <springProfile name="prod">
-        <root level="DEBUG">
+        <root level="INFO">
             <appender-ref ref="FILEWARN"/>
             <appender-ref ref="FILEINFO"/>
             <appender-ref ref="FILEERROR"/>
-            <!--<appender-ref ref="DBAPPENDER"/>-->
             <appender-ref ref="CONSOLE"/>
         </root>
     </springProfile>
 
 
     <springProfile name="dev">
-        <root level="DEBUG">
+        <root level="INFO">
             <appender-ref ref="FILEERROR"/>
             <appender-ref ref="FILEWARN"/>
             <appender-ref ref="FILEINFO"/>
-            <!--<appender-ref ref="DBAPPENDER"/>-->
             <appender-ref ref="CONSOLE"/>
         </root>
     </springProfile>
