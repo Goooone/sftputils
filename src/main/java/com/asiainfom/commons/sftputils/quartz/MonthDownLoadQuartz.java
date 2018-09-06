@@ -78,14 +78,13 @@ public class MonthDownLoadQuartz {
                 for (String name : names) {
                     name = name + DateUtils.getBeforeMonthText() + fileSubfix;
                     downLoadFile = new File(filePath + File.separator + name);
+                    sftpPath = rootDirectory + File.separator + path;
                     if (!downLoadFile.exists()) {
-
-                        sftpPath = rootDirectory + File.separator + path;
                         sftpUtil.download(sftpPath, name, downLoadFile.getAbsolutePath());
                         log.info("月文件下载-->从ftp:{}下载文件到-->{}", sftpUtil.getHost(), downLoadFile.getAbsolutePath());
                         sftpUtil.logout();
                     } else {
-                        log.info("月文件下载-->文件{}已存在，不下载", downLoadFile.getAbsolutePath());
+                        log.info("月文件下载-->文件{}已存在，不下载{}", downLoadFile.getAbsolutePath(), sftpPath + File.separator + name);
                     }
                 }
             }

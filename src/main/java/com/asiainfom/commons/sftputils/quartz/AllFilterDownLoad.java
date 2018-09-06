@@ -44,7 +44,7 @@ public class AllFilterDownLoad {
     @Value("${sftp.month.fileSubfix}")
     String monthSubfix;
 
-    @Scheduled(cron = "${quartz.cron}")
+    //@Scheduled(cron = "${quartz.cron}")
     public void timerToNow() {
         if (flag) {
             log.info("开启全量下载-->");

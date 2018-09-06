@@ -53,10 +53,11 @@ public class DayDownLoadQuartz {
         log.info("日文件下载-->当前时间: 【" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()) + " 】sftp下载开始");
         try {
             sftpUtil.login();
+            String path;
             if (ftpPath.indexOf(Constants.DAY_$MONTH) > -1) {
-                ftpPath = rootDirectory + File.separator + DateUtils.getMonthText();
+                path = rootDirectory + File.separator + DateUtils.getMonthText();
             } else {
-                ftpPath = rootDirectory + File.separator + "day";
+                path = rootDirectory + File.separator + "day";
             }
             String filePath = localDirectory + File.separator + "day";
             File file = new File(filePath);
@@ -72,9 +73,9 @@ public class DayDownLoadQuartz {
                     downLoadFile = new File(filePath + File.separator + name);
                     if (!downLoadFile.exists()) {
                         log.info("日文件下载-->从ftp:{}下载文件到-->{}", sftpUtil.getHost(), downLoadFile.getAbsolutePath());
-                        sftpUtil.download(ftpPath, name, downLoadFile.getAbsolutePath());
+                        sftpUtil.download(path, name, downLoadFile.getAbsolutePath());
                     } else {
-                        log.info("日文件下载-->文件{}已存在，不下载", downLoadFile.getAbsolutePath());
+                        log.info("日文件下载-->文件{}已存在，不下载{}", downLoadFile.getAbsolutePath(), path + File.separator + name);
                     }
                 }
             }
